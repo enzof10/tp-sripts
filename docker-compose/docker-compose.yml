@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  postgres:
+    container_name: "postgres"
+    image: postgres:15
+    restart: always
+    ports:
+      - "${POSTGRES_DB_PORT}:5432"
+    environment:
+      - DATABASE_HOST=${POSTGRES_DB_HOST}
+      - POSTGRES_USER=${POSTGRES_DB_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: "pgadmin"
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PG_ADMIN_USER}
+      PGADMIN_DEFAULT_PASSWORD: ${PG_ADMIN_PASSWORD}
+    ports:
+      - "${PG_ADMIN_PORT}:80"
+    depends_on:
+      - postgres
+
+  nestjs-api:
+    container_name: "nestjs-api"
+    restart: always
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_DB_HOST=${POSTGRES_DB_HOST}
+      - POSTGRES_DB_USER=${POSTGRES_DB_USER}
+      - POSTGRES_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
+      - DATABASE_URL=postgresql://${POSTGRES_DB_USER}:${POSTGRES_DB_PASSWORD}@${POSTGRES_DB_HOST_EXTERN}:5432/${POSTGRES_DB_NAME}?charset=utf8
+    ports:
+      - "${NESTJS_API_PORT}:${NESTJS_API_PORT}"
+    depends_on:
+      - postgres
+    volumes:
+      - ../backend:/usr/src/app
+    command: npm run start:dev
+
+  frontend-ticker:
+    container_name: "frontend-ticker"
+    restart: always
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ../frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - nestjs-api
+    environment:
+      NODE_ENV: development
+
+
+
+volumes:
+  postgres_data:
