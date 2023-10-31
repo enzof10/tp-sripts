@@ -26,8 +26,8 @@ services:
     depends_on:
       - postgres
 
-  nestjs-api:
-    container_name: "nestjs-api"
+  backend-app:
+    container_name: "nestjs-app"
     restart: always
     build:
       context: ../backend
@@ -46,10 +46,10 @@ services:
       - ../backend:/usr/src/app
     command: npm run start:dev
 
-  frontend-ticker:
-    container_name: "frontend-ticker"
+  frontend-app:
+    container_name: "frontend-app"
     restart: always
-    build:
+    builda:
       context: ../frontend
       dockerfile: Dockerfile
     volumes:
@@ -58,7 +58,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - nestjs-api
+      - nestjs-app
     environment:
       NODE_ENV: development
 
